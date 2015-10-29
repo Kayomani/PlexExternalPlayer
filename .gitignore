@@ -1,0 +1,4 @@
+/Agent/packages/*
+/Agent/PlexExternalPlayerAgent/bin/*
+/Agent/PlexExternalPlayerAgent/obj/*
+/Agent/.vs/PlexExternalPlayerAgent/v14/*.suo
