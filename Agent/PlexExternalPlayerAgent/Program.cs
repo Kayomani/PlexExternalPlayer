@@ -43,19 +43,26 @@ namespace PlexExternalPlayerAgent
                             fn.EndsWith(".mkv") ||
                             fn.EndsWith(".mp4") ||
                             fn.EndsWith(".mpg") ||
+                            fn.EndsWith(".ts") ||
                             fn.EndsWith(".mpeg"))
                         {
-                            Process.Start(info);
+                            try {
+                                Process.Start(info);
+                            }
+                            catch(Exception e)
+                            {
+                                MessageBox.Show($"Error running {info.FileName}  due to : {e.Message}","Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            }
                         }
                         else
                         {
-                            MessageBox.Show("Tried to run " + info.FileName + " but it wasn't allowed.");
+                            MessageBox.Show($"Tried to run {info.FileName} but it wasn't allowed.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
 
                     }
                     else
                     {
-                        MessageBox.Show("Tried to run " + info.FileName + " but it didn't exist.");
+                        MessageBox.Show($"Tried to run {info.FileName} but it didn't exist.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
 
                     return Task.Factory.GetCompleted();

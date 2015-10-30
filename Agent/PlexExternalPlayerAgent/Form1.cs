@@ -33,5 +33,10 @@ namespace PlexExternalPlayerAgent
             ShowInTaskbar = false;
             Hide();
         }
+
+        private void showVersionToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show($"Plex external player agent v{Application.ProductVersion}.", "Version",MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
     }
 }
