@@ -1,10 +1,12 @@
 // ==UserScript==
 // @name         Plex External Player
 // @namespace    https://github.com/Kayomani/PlexExternalPlayer
-// @version      1.0
+// @version      1.1
 // @description  Play plex videos in an external player
 // @author       Kayomani
 // @include     /^https?://.*:32400/web.*
+// @include     http://*:32400/web/index.html*
+// @require     http://code.jquery.com/jquery-1.11.3.min.js
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -24,9 +26,8 @@ var logMessage = function(msg){
 };
 
 var markAsPlayedInPlex = function(id) {
-    var url =  window.location.origin + '/:/scrobble?key='+ id +'&identifier=com.plexapp.plugins.library'
     logMessage('Marking ' + id + ' as played');
-    return makeRequest(url);
+    return makeRequest(window.location.origin + '/:/scrobble?key='+ id +'&identifier=com.plexapp.plugins.library');
 };
 
 var playFileUsingAgent = function(path, id) {
@@ -53,7 +54,6 @@ var clickListener = function(e) {
         var idx = url.indexOf('%2Fmetadata%2F');
         var id = url.substr(idx + 14);
 
-        var url =
         // Get metadata
         makeRequest(window.location.origin + '/library/metadata/' + id + '?checkFiles=1&includeExtras=1')
         .then(function(response){
@@ -108,7 +108,6 @@ var bindClicks = function() {
                     parent.after(template);
                     template.click(clickListener);
                 } else if (parent.is('div') && parent.hasClass('media-poster-actions')) {
-
                     var template = jQuery('<button class="play-btn media-poster-btn btn-link" tabindex="-1"><i  style="color: #41D677"  class="glyphicon play plexextplayer plexextplayerico"></i></button>');
                     parent.prepend(template);
                     template.click(clickListener);
