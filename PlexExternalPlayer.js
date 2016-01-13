@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Plex External Player
 // @namespace    https://github.com/Kayomani/PlexExternalPlayer
-// @version      1.1
+// @version      1.2
 // @description  Play plex videos in an external player
 // @author       Kayomani
 // @include     /^https?://.*:32400/web.*
@@ -30,9 +30,19 @@ var markAsPlayedInPlex = function(id) {
     return makeRequest(window.location.origin + '/:/scrobble?key='+ id +'&identifier=com.plexapp.plugins.library');
 };
 
-var playFileUsingAgent = function(path, id) {
+var openItemOnAgent = function(path, id, openFolder) {
+     if(openFolder){
+         var fwd = path.lastIndexOf('/');
+         var bck = path.lastIndexOf('\\');
+         var best = fwd>bck?fwd:bck;
+         if(best>-1){
+             path = path.substr(0, best);   
+         }                                        
+     }
+    
     logMessage('Playing ' + path);
-    var url = 'http://localhost:7251/' + btoa(path);
+    var url = 'http://localhost:7251/?protocol=1&item=' + encodeURIComponent(path);
+  
      return new Promise(function (resolve, reject) {
          makeRequest(url).then(function(){
              markAsPlayedInPlex(id).then(resolve, reject);
@@ -45,6 +55,8 @@ var clickListener = function(e) {
     e.stopPropagation();
     var a = jQuery(e.target).closest('a');
     var link = a.attr('href');
+    var openFolder = a.attr('data-type') === 'folder';
+  
     var url = link;
     if (link === '#' || link === undefined) {
         url = window.location.hash;
@@ -61,7 +73,7 @@ var clickListener = function(e) {
              var parts = response.responseXML.getElementsByTagName('Part');
                 for (var i = 0; i < parts.length; i++) {
                     if (parts[i].attributes['file'] !== undefined) {
-                        playFileUsingAgent(parts[i].attributes['file'].value, id);
+                        openItemOnAgent(parts[i].attributes['file'].value, id, openFolder);
                         return;
                     }
                 }
@@ -86,8 +98,8 @@ var clickListener = function(e) {
                                     }
                                 }
 
-                                if (file !== null) {
-                                    playFileUsingAgent(file, id);
+                                if (file !== null) {                                    
+                                    openItemOnAgent(file, id, openFolder);
                                 }
                           });
                     }
@@ -104,11 +116,11 @@ var bindClicks = function() {
                 e.addClass('plexextplayer');
                 var parent = e.parent().parent();
                 if (parent.is('li')) {
-                    var template = jQuery('<li><a class="btn-gray" href="#" title="Play Externally" data-toggle="Play Externally" data-original-title="Play Externally"><i style="color: #41D677" class="glyphicon play plexextplayer plexextplayerico"></i></a></li>');
+                    var template = jQuery('<li><a class="btn-gray" href="#" title="Play Externally" data-toggle="Play Externally" data-original-title="Play Externally"><i class="glyphicon play plexextplayer plexextplayerico"></i></a></li><li><a class="btn-gray" href="#" title="Open containing folder" data-type="folder" data-toggle="Play Externally" data-original-title="Open containing folder"><i class="glyphicon play plexextplayer plexfolderextplayerico"></i></a></li>');
                     parent.after(template);
                     template.click(clickListener);
                 } else if (parent.is('div') && parent.hasClass('media-poster-actions')) {
-                    var template = jQuery('<button class="play-btn media-poster-btn btn-link" tabindex="-1"><i  style="color: #41D677"  class="glyphicon play plexextplayer plexextplayerico"></i></button>');
+                    var template = jQuery('<button class="play-btn media-poster-btn btn-link" tabindex="-1"><i class="glyphicon play plexextplayer plexextplayerico"></i></button>');
                     parent.prepend(template);
                     template.click(clickListener);
                 }
@@ -118,7 +130,7 @@ var bindClicks = function() {
 };
 
 // Make buttons smaller
-jQuery('body').append('<style>.media-poster-btn { padding: 8px !important; }</style>');
+jQuery('body').append('<style>.media-poster-btn { padding: 8px !important; } .glyphicon.plexfolderextplayerico:before {  content: "\\e343";   } .glyphicon.plexextplayerico:before {  content: "\\e161";   }</style>');
 
 // Bind buttons and check for new ones every 100ms
 setInterval(bindClicks, 100);

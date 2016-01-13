@@ -30,10 +30,19 @@ namespace PlexExternalPlayerAgent
                 {
                     Console.WriteLine("Got Request!");
 
+                    var expectedProtocol = "1";
+                    var protocol = context.Request.QueryString.GetByName("protocol");
+
+                    if (protocol != "1")
+                    {
+                        MessageBox.Show($"Agent and script version differ.  Agent: {expectedProtocol}  Script : {protocol}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return Task.Factory.GetCompleted();
+                    }
+
                     context.Response = HttpResponse.CreateWithMessage(HttpResponseCode.Ok, "Received", false);
 
                     var info = new ProcessStartInfo();
-                    info.FileName = Encoding.UTF8.GetString(Convert.FromBase64String(context.Request.Uri.OriginalString.Substring(1)));
+                    info.FileName = WebUtility.UrlDecode(context.Request.QueryString.GetByName("item"));
                     info.UseShellExecute = true;
 
                     if (File.Exists(info.FileName))
@@ -59,6 +68,15 @@ namespace PlexExternalPlayerAgent
                             MessageBox.Show($"Tried to run {info.FileName} but it wasn't allowed.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
 
+                    } else if (Directory.Exists(info.FileName))
+                    {
+                        try {
+                            Process.Start(info);
+                        }
+                        catch (Exception e)
+                        {
+                            MessageBox.Show($"Error running {info.FileName}  due to : {e.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
                     }
                     else
                     {
