@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Plex External Player
 // @namespace    https://github.com/Kayomani/PlexExternalPlayer
-// @version      1.2
+// @version      1.3
 // @description  Play plex videos in an external player
 // @author       Kayomani
 // @include     /^https?://.*:32400/web.*
@@ -14,6 +14,9 @@ var makeRequest = function(url){
    return new Promise( function (resolve, reject) {
        GM_xmlhttpRequest({
            method: "GET",
+            headers: {
+                "X-Plex-Token":localStorage["myPlexAccessToken"]
+            },
            url: url,
            onload: resolve,
            onerror: reject
