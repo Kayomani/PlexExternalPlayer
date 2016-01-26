@@ -25,7 +25,16 @@ namespace PlexExternalPlayerAgent
 
             using (var httpServer = new HttpServer(new HttpRequestProvider()))
             {
-                httpServer.Use(new TcpListenerAdapter(new TcpListener(IPAddress.Loopback, 7251)));
+                try
+                {
+                    httpServer.Use(new TcpListenerAdapter(new TcpListener(IPAddress.Loopback, 7251)));
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show($"Could not initilize server (Is another agent already runnning?). Cannot continue, closing agent.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Environment.Exit(1);
+                }
+
                 httpServer.Use((context, next) =>
                 {
                     Console.WriteLine("Got Request!");
