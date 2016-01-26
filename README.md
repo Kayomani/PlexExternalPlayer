@@ -9,4 +9,4 @@ This is a plex modification that allows for browsing using the web interface but
 4. Install the script from github or [GreasyFork](https://greasyfork.org/en/scripts/13437-plex-external-player)
 5. Refresh any existing plex pages you have open.
 
-![screenshot](http://i.imgur.com/aM37t76.png "screenshot")
+![screenshot](http://i.imgur.com/YZr2pbk.png "screenshot")
