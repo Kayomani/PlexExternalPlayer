@@ -1,14 +1,52 @@
 // ==UserScript==
 // @name         Plex External Player
 // @namespace    https://github.com/Kayomani/PlexExternalPlayer
-// @version      1.3
+// @version      1.4
 // @description  Play plex videos in an external player
 // @author       Kayomani
 // @include     /^https?://.*:32400/web.*
 // @include     http://*:32400/web/index.html*
 // @require     http://code.jquery.com/jquery-1.11.3.min.js
+// @require     https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
+
+$("head").append (
+    '<link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" type="text/css">'
+);
+
+
+toastr.options = {
+    "closeButton": true,
+    "debug": false,
+    "newestOnTop": true,
+    "progressBar": true,
+    "positionClass": "toast-bottom-right",
+    "preventDuplicates": false,
+    "onclick": null,
+    "showDuration": "300",
+    "hideDuration": "1000",
+    "timeOut": "5000",
+    "extendedTimeOut": "1000",
+    "showEasing": "swing",
+    "hideEasing": "linear",
+    "showMethod": "fadeIn",
+    "hideMethod": "fadeOut"
+};
+  
+var showToast = function(msg, error){
+   var title = 'Plex External Player';
+   if(error){
+     toastr.error(msg, title, {timeOut: 10000});  
+     logMessage(msg);
+   } else {
+     toastr.success(msg, title);
+   }  
+};
+
+var logMessage = function(msg){
+    console.log('Plex External: ' + msg);   
+};
 
 var makeRequest = function(url){
    return new Promise( function (resolve, reject) {
@@ -19,18 +57,26 @@ var makeRequest = function(url){
             },
            url: url,
            onload: resolve,
-           onerror: reject
+           onreadystatechange: function(state) {
+               if (state.readyState === 4) {
+                   if (state.status !== 200) {
+                        showToast('Error calling: ' + url + '. Response: ' + error.responseText + ' Code:' + error.status + ' Message: ' + error.statusText, 1);  
+                   } 
+               } 
+               
+           },
+           onerror:  reject
        });
    });    
 };
 
-var logMessage = function(msg){
-    console.log('Plex External: ' + msg);   
-};
+
 
 var markAsPlayedInPlex = function(id) {
     logMessage('Marking ' + id + ' as played');
-    return makeRequest(window.location.origin + '/:/scrobble?key='+ id +'&identifier=com.plexapp.plugins.library');
+    return makeRequest(window.location.origin + '/:/scrobble?key='+ id +'&identifier=com.plexapp.plugins.library').catch(function(){
+        showToast('Failed to mark item ' + id + ' as played');
+    });
 };
 
 var openItemOnAgent = function(path, id, openFolder) {
@@ -42,10 +88,9 @@ var openItemOnAgent = function(path, id, openFolder) {
              path = path.substr(0, best);   
          }                                        
      }
-    
+    showToast('Playing ' + path, 0);
     logMessage('Playing ' + path);
     var url = 'http://localhost:7251/?protocol=1&item=' + encodeURIComponent(path);
-  
      return new Promise(function (resolve, reject) {
          makeRequest(url).then(function(){
              markAsPlayedInPlex(id).then(resolve, reject);
@@ -70,13 +115,16 @@ var clickListener = function(e) {
         var id = url.substr(idx + 14);
 
         // Get metadata
-        makeRequest(window.location.origin + '/library/metadata/' + id + '?checkFiles=1&includeExtras=1')
+        var metaDataPath = window.location.origin + '/library/metadata/' + id + '?checkFiles=1&includeExtras=1';
+        makeRequest(metaDataPath)
         .then(function(response){
              // Play the first availible part
              var parts = response.responseXML.getElementsByTagName('Part');
                 for (var i = 0; i < parts.length; i++) {
                     if (parts[i].attributes['file'] !== undefined) {
-                        openItemOnAgent(parts[i].attributes['file'].value, id, openFolder);
+                        openItemOnAgent(parts[i].attributes['file'].value, id, openFolder).catch(function(){
+                              showToast('Failed to connect to agent, is it running or firewalled?',1);
+                          });
                         return;
                     }
                 }
@@ -102,11 +150,17 @@ var clickListener = function(e) {
                                 }
 
                                 if (file !== null) {                                    
-                                    openItemOnAgent(file, id, openFolder);
+                                    openItemOnAgent(file, id, openFolder).catch(function(){
+                              showToast('Failed to connect to agent, is it running or firewalled?',1);
+                          });
                                 }
+                          }).catch(function(){
+                              showToast('Failed to get information for directory',1);
                           });
                     }
                 } 
+        }, function(error){
+            showToast('Error getting metadata from' + metaDataPath, 1);   
         });
     }
 };
