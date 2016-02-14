@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Plex External Player
 // @namespace    https://github.com/Kayomani/PlexExternalPlayer
-// @version      1.4
+// @version      1.5
 // @description  Play plex videos in an external player
 // @author       Kayomani
 // @include     /^https?://.*:32400/web.*
@@ -90,7 +90,9 @@ var openItemOnAgent = function(path, id, openFolder) {
      }
     showToast('Playing ' + path, 0);
     logMessage('Playing ' + path);
-    var url = 'http://localhost:7251/?protocol=1&item=' + encodeURIComponent(path);
+    // umicrosharp doesn't handle plus properly
+    path = path.replace(/\+/g, '[PLEXEXTPLUS]');
+    var url = 'http://localhost:7251/?protocol=2&item=' + encodeURIComponent(path);
      return new Promise(function (resolve, reject) {
          makeRequest(url).then(function(){
              markAsPlayedInPlex(id).then(resolve, reject);

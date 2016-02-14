@@ -42,7 +42,7 @@ namespace PlexExternalPlayerAgent
                     var expectedProtocol = "1";
                     var protocol = context.Request.QueryString.GetByName("protocol");
 
-                    if (protocol != "1")
+                    if (protocol != "2")
                     {
                         MessageBox.Show($"Agent and script version differ.  Agent: {expectedProtocol}  Script : {protocol}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return Task.Factory.GetCompleted();
@@ -51,7 +51,8 @@ namespace PlexExternalPlayerAgent
                     context.Response = HttpResponse.CreateWithMessage(HttpResponseCode.Ok, "Received", false);
 
                     var info = new ProcessStartInfo();
-                    info.FileName = WebUtility.UrlDecode(context.Request.QueryString.GetByName("item"));
+                    info.FileName = WebUtility.UrlDecode(context.Request.QueryString.GetByName("item")).Replace("[PLEXEXTPLUS]","+");
+
                     info.UseShellExecute = true;
 
                     if (File.Exists(info.FileName))
