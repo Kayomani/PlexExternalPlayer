@@ -98,7 +98,7 @@ var openItemOnAgent = function(path, id, openFolder) {
     // umicrosharp doesn't handle plus properly
     path = path.replace(/\+/g, '[PLEXEXTPLUS]');
     path = path.toLowerCase().replace('d:\\torrents\\','v:\\');
-    var url = 'http://localhost:7251/?protocol=2&item=' + encodeURIComponent(path);
+    var url = 'http://127.0.0.1:7251/?protocol=2&item=' + encodeURIComponent(path);
      return new Promise(function (resolve, reject) {
          makeRequest(url).then(function(){
              markAsPlayedInPlex(id).then(resolve, reject);
