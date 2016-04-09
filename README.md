@@ -31,6 +31,8 @@ The script add a button to next to play in the plex web interface (Not via plex.
     ```
 * Playing from a remote server
   
+  You can map a network drive or use the alternative below.  Note that the drive name must match or you will need to add the replace line below. 
+  
     To use this script with a remote server, several things must be changed. Essentially, you mount your remote media directory to your local filesystem using sshfs, and then add a line in the script to rewrite the path where it will look for the file.
     * Install [DokanSetup_redist.exe](https://github.com/dokan-dev/dokany/releases/tag/v1.0.0-RC1)
       * Check to make sure vcredist x86 and x64 are installed. If they aren't, install both from [Microsoft, here](https://www.microsoft.com/download/details.aspx?id=48145)
