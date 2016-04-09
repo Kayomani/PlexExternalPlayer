@@ -52,20 +52,26 @@ var logMessage = function(msg){
 };
 
 var makeRequest = function(url){
-   return new Promise( function (resolve, reject) {
+   return new Promise( function (resolve, reject) {    
+       var origAccessToken = localStorage.myPlexAccessToken;
+       var serverNode = JSON.parse(localStorage.users).users[1].servers[0];
+       var newAccessToken = typeof serverNode != 'undefined' ? serverNode.accessToken : origAccessToken;
+       
+       
        GM_xmlhttpRequest({
            method: "GET",
             headers: {
-                "X-Plex-Token":localStorage["myPlexAccessToken"]
+                "X-Plex-Token": newAccessToken
             },
            url: url,
            onload: resolve,
            onreadystatechange: function(state) {
                if (state.readyState === 4) {
                    if (state.status !== 200) {
-                        showToast('Error calling: ' + url + '. Response: ' + error.responseText + ' Code:' + error.status + ' Message: ' + error.statusText, 1);
-                   }
-               }
+                        showToast('Error calling: ' + url + '. Response: ' + state.responseText + ' Code:' + state.status + ' Message: ' + state.statusText, 1);  
+                   } 
+               } 
+               
            },
            onerror:  reject
        });
@@ -94,7 +100,7 @@ var openItemOnAgent = function(path, id, openFolder) {
     logMessage('Playing ' + path);
     // umicrosharp doesn't handle plus properly
     path = path.replace(/\+/g, '[PLEXEXTPLUS]');
-    var url = 'http://localhost:7251/?protocol=2&item=' + encodeURIComponent(path);
+    var url = 'http://127.0.0.1:7251/?protocol=2&item=' + encodeURIComponent(path);
      return new Promise(function (resolve, reject) {
          makeRequest(url).then(function(){
              markAsPlayedInPlex(id).then(resolve, reject);
