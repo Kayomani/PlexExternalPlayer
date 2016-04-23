@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Plex External Player
 // @namespace    https://github.com/Kayomani/PlexExternalPlayer
-// @version      1.6
+// @version      1.7
 // @description  Play plex videos in an external player
 // @author       Kayomani
 // @include     /^https?://.*:32400/web.*
@@ -115,7 +115,7 @@ var clickListener = function(e) {
     var link = a.attr('href');
     var openFolder = a.attr('data-type') === 'folder';
     var url = link;
-    if (link === '#' || link === undefined) {
+    if (link === '#' || link === undefined || link === 'javascript:void(0)') {
         url = window.location.hash;
     }
 
