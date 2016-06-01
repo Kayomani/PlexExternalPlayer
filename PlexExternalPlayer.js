@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Plex External Player
 // @namespace    https://github.com/Kayomani/PlexExternalPlayer
-// @version      1.7
+// @version      1.8
 // @description  Play plex videos in an external player
 // @author       Kayomani
 // @include     /^https?://.*:32400/web.*
@@ -36,46 +36,93 @@ toastr.options = {
 };
 
 var showToast = function(msg, error){
-   var title = 'Plex External Player';
-   if(error){
-     toastr.error(msg, title, {timeOut: 10000});
-     logMessage(msg);
-   }
-   else
-   {
-     toastr.success(msg, title);
-   }
+    var title = 'Plex External Player';
+    if(error){
+        toastr.error(msg, title, {timeOut: 10000});
+        logMessage(msg);
+    }
+    else
+    {
+        toastr.success(msg, title);
+    }
 };
 
 var logMessage = function(msg){
     console.log('Plex External: ' + msg);
 };
 
-var makeRequest = function(url){
-   return new Promise( function (resolve, reject) {    
-       var origAccessToken = localStorage.myPlexAccessToken;
-       var serverNode = JSON.parse(localStorage.users).users[0].servers[0];
-       var newAccessToken = typeof serverNode != 'undefined' ? serverNode.accessToken : origAccessToken;
-       
-       
-       GM_xmlhttpRequest({
-           method: "GET",
+var makeRequest = function(url, user, server){
+    return new Promise( function (resolve, reject) {
+        var origAccessToken = localStorage.myPlexAccessToken;
+        var serverNode = JSON.parse(localStorage.users);
+        var tokenToTry = origAccessToken;
+        if(serverNode===undefined)
+        {
+            serverNode = {
+                users : []
+            };
+        }
+
+        if(user!==undefined && server !==undefined)
+        {
+            if(user < serverNode.users.length)
+            {
+                if(server < serverNode.users[user].servers.length)
+                {
+                     tokenToTry = serverNode.users[user].servers[server];
+                }
+                else
+                {
+                    showToast('Could not find authentication info', 1);
+                    reject();
+                    return;
+                }
+            }
+            else
+            {
+                showToast('Could not find authentication info', 1);
+                reject();
+                 return;
+            }
+        }
+        var onError =  function()
+            {
+               if(user===undefined)
+               {
+                   user = 0;
+                   server = 0;
+               } else
+               {
+                  server++;
+                  if(serverNode.users[user].servers.length===server)
+                  {
+                    user++;
+                    server = 0;
+                  }
+               }
+               makeRequest(url,user,server).then(resolve, reject);
+            };
+
+        GM_xmlhttpRequest({
+            method: "GET",
             headers: {
-                "X-Plex-Token": newAccessToken
+                "X-Plex-Token": tokenToTry
             },
-           url: url,
-           onload: resolve,
-           onreadystatechange: function(state) {
-               if (state.readyState === 4) {
-                   if (state.status !== 200) {
-                        showToast('Error calling: ' + url + '. Response: ' + state.responseText + ' Code:' + state.status + ' Message: ' + state.statusText, 1);  
-                   } 
-               } 
-               
-           },
-           onerror:  reject
-       });
-   });
+            url: url,
+            onload: resolve,
+            onreadystatechange: function(state) {
+                if (state.readyState === 4) {
+                    if(state.status === 401)
+                    {
+                     onError();
+                    } else if (state.status !== 200) {
+                        showToast('Error calling: ' + url + '. Response: ' + state.responseText + ' Code:' + state.status + ' Message: ' + state.statusText, 1);
+                    }
+                }
+            },
+            onerror: onError
+        });
+    });
 };
 
 
@@ -88,24 +135,24 @@ var markAsPlayedInPlex = function(id) {
 };
 
 var openItemOnAgent = function(path, id, openFolder) {
-     if(openFolder){
-         var fwd = path.lastIndexOf('/');
-         var bck = path.lastIndexOf('\\');
-         var best = fwd>bck?fwd:bck;
-         if(best>-1){
-             path = path.substr(0, best);
-         }
-     }
+    if(openFolder){
+        var fwd = path.lastIndexOf('/');
+        var bck = path.lastIndexOf('\\');
+        var best = fwd>bck?fwd:bck;
+        if(best>-1){
+            path = path.substr(0, best);
+        }
+    }
     showToast('Playing ' + path, 0);
     logMessage('Playing ' + path);
     // umicrosharp doesn't handle plus properly
     path = path.replace(/\+/g, '[PLEXEXTPLUS]');
     var url = 'http://127.0.0.1:7251/?protocol=2&item=' + encodeURIComponent(path);
-     return new Promise(function (resolve, reject) {
-         makeRequest(url).then(function(){
-             markAsPlayedInPlex(id).then(resolve, reject);
-         },reject);
-     });
+    return new Promise(function (resolve, reject) {
+        makeRequest(url).then(function(){
+            markAsPlayedInPlex(id).then(resolve, reject);
+        },reject);
+    });
 };
 
 var clickListener = function(e) {
@@ -126,54 +173,54 @@ var clickListener = function(e) {
         // Get metadata
         var metaDataPath = window.location.origin + '/library/metadata/' + id + '?checkFiles=1&includeExtras=1';
         makeRequest(metaDataPath)
-        .then(function(response){
-             // Play the first availible part
-             var parts = response.responseXML.getElementsByTagName('Part');
-                for (var i = 0; i < parts.length; i++) {
-                    if (parts[i].attributes['file'] !== undefined) {
-                        openItemOnAgent(parts[i].attributes['file'].value, id, openFolder).catch(function(){
-                              showToast('Failed to connect to agent, is it running or firewalled?',1);
-                          });
-                        return;
-                    }
+            .then(function(response){
+            // Play the first availible part
+            var parts = response.responseXML.getElementsByTagName('Part');
+            for (var i = 0; i < parts.length; i++) {
+                if (parts[i].attributes['file'] !== undefined) {
+                    openItemOnAgent(parts[i].attributes['file'].value, id, openFolder).catch(function(){
+                        showToast('Failed to connect to agent, is it running or firewalled?',1);
+                    });
+                    return;
                 }
+            }
 
-                if (parts.length === 0) {
-                    // If we got a directory/Season back then get the files in it
-                    var dirs = response.responseXML.getElementsByTagName('Directory');
-                    if (dirs.length > 0) {
-                          makeRequest(window.location.origin + dirs[0].attributes['key'].value)
-                          .then(function(response){
-                               var videos = response.responseXML.getElementsByTagName('Video');
-                                var file = null;
-                                var id = null;
-                                if(videos.length === 0)
-                                {
-                                  showToast('Could not determine which video to play as there are multiple seasons.',true);
-                                  return;
+            if (parts.length === 0) {
+                // If we got a directory/Season back then get the files in it
+                var dirs = response.responseXML.getElementsByTagName('Directory');
+                if (dirs.length > 0) {
+                    makeRequest(window.location.origin + dirs[0].attributes['key'].value)
+                        .then(function(response){
+                        var videos = response.responseXML.getElementsByTagName('Video');
+                        var file = null;
+                        var id = null;
+                        if(videos.length === 0)
+                        {
+                            showToast('Could not determine which video to play as there are multiple seasons.',true);
+                            return;
+                        }
+                        for (var i = 0; i < videos.length; i++) {
+                            var vparts = videos[i].getElementsByTagName('Part');
+                            if (vparts.length > 0) {
+                                file = vparts[0].attributes['file'].value;
+                                id = vparts[0].attributes['id'].value;
+                                if (videos[i].attributes['lastViewedAt'] === null || videos[i].attributes['lastViewedAt'] === undefined) {
+                                    break;
                                 }
-                                for (var i = 0; i < videos.length; i++) {
-                                    var vparts = videos[i].getElementsByTagName('Part');
-                                    if (vparts.length > 0) {
-                                        file = vparts[0].attributes['file'].value;
-                                        id = vparts[0].attributes['id'].value;
-                                        if (videos[i].attributes['lastViewedAt'] === null || videos[i].attributes['lastViewedAt'] === undefined) {
-                                            break;
-                                        }
-                                    }
-                                }
+                            }
+                        }
 
-                                if (file !== null)
-                                {
-                                    openItemOnAgent(file, id, openFolder).catch(function(){
-                                      showToast('Failed to connect to agent, is it running or firewalled?',1);
-                                    });
-                                }
-                          }).catch(function(){
-                              showToast('Failed to get information for directory',1);
-                          });
-                    }
+                        if (file !== null)
+                        {
+                            openItemOnAgent(file, id, openFolder).catch(function(){
+                                showToast('Failed to connect to agent, is it running or firewalled?',1);
+                            });
+                        }
+                    }).catch(function(){
+                        showToast('Failed to get information for directory',1);
+                    });
                 }
+            }
         }, function(error){
             showToast('Error getting metadata from' + metaDataPath, 1);
         });
@@ -199,28 +246,28 @@ var bindClicks = function() {
             }
         }
     });
-     // React cover page
-     jQuery(".plex-icon-more-560").each(function(i, e) {
-          e = jQuery(e);
-          var poster = e.parent().parent();
-          if(poster.length === 1 && poster[0].className.startsWith('MetadataPosterCardOverlay'))
-          {
+    // React cover page
+    jQuery(".plex-icon-more-560").each(function(i, e) {
+        e = jQuery(e);
+        var poster = e.parent().parent();
+        if(poster.length === 1 && poster[0].className.startsWith('MetadataPosterCardOverlay'))
+        {
             var existingButton = poster.find('.plexextplayerico');
             if(existingButton.length === 0)
             {
-               var url = poster.find('a').attr('href');
-               var template = jQuery('<a href="'+ url +'" aria-haspopup="false"  aria-role="button" class="" type="button"><i class="glyphicon play plexextplayer plexextplayerico plexextplayericocover"></i></button>'); 
-               var newButton = template.appendTo(poster);
-               newButton.click(clickListener);
-               poster.mouseenter(function(){
-                 newButton.find('i').css('display','block');
-               });
+                var url = poster.find('a').attr('href');
+                var template = jQuery('<a href="'+ url +'" aria-haspopup="false"  aria-role="button" class="" type="button"><i class="glyphicon play plexextplayer plexextplayerico plexextplayericocover"></i></button>'); 
+                var newButton = template.appendTo(poster);
+                newButton.click(clickListener);
+                poster.mouseenter(function(){
+                    newButton.find('i').css('display','block');
+                });
                 poster.mouseleave(function(){
-                 newButton.find('i').css('display','none');
-               });
+                    newButton.find('i').css('display','none');
+                });
             }
-          }
-     });
+        }
+    });
 };
 
 // Make buttons smaller
