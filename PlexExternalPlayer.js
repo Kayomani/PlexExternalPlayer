@@ -54,7 +54,7 @@ var logMessage = function(msg){
 var makeRequest = function(url){
    return new Promise( function (resolve, reject) {    
        var origAccessToken = localStorage.myPlexAccessToken;
-       var serverNode = JSON.parse(localStorage.users).users[1].servers[0];
+       var serverNode = JSON.parse(localStorage.users).users[0].servers[0];
        var newAccessToken = typeof serverNode != 'undefined' ? serverNode.accessToken : origAccessToken;
        
        
