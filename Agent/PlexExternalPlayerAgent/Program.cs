@@ -63,6 +63,8 @@ namespace PlexExternalPlayerAgent
                             fn.EndsWith(".mp4") ||
                             fn.EndsWith(".mpg") ||
                             fn.EndsWith(".ts") ||
+                            fn.EndsWith(".wmv") ||
+                            fn.EndsWith(".flv") ||
                             fn.EndsWith(".mpeg"))
                         {
                             try {
