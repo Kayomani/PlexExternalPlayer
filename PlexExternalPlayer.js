@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Plex External Player
 // @namespace    https://github.com/Kayomani/PlexExternalPlayer
-// @version      1.8
+// @version      1.9
 // @description  Play plex videos in an external player
 // @author       Kayomani
 // @include     /^https?://.*:32400/web.*
@@ -69,7 +69,7 @@ var makeRequest = function(url, user, server){
             {
                 if(server < serverNode.users[user].servers.length)
                 {
-                     tokenToTry = serverNode.users[user].servers[server];
+                    tokenToTry = serverNode.users[user].servers[server].accessToken;
                 }
                 else
                 {
@@ -82,39 +82,45 @@ var makeRequest = function(url, user, server){
             {
                 showToast('Could not find authentication info', 1);
                 reject();
-                 return;
+                return;
             }
         }
         var onError =  function()
+        {
+            if(user===undefined)
             {
-               if(user===undefined)
-               {
-                   user = 0;
-                   server = 0;
-               } else
-               {
-                  server++;
-                  if(serverNode.users[user].servers.length===server)
-                  {
+                user = 0;
+                server = 0;
+            } else
+            {
+                server++;
+                if(serverNode.users[user].servers.length===server)
+                {
                     user++;
                     server = 0;
-                  }
-               }
-               makeRequest(url,user,server).then(resolve, reject);
-            };
+                }
+            }
+            makeRequest(url,user,server).then(resolve, reject);
+        };
 
         GM_xmlhttpRequest({
             method: "GET",
-            headers: {
-                "X-Plex-Token": tokenToTry
+            headers: headers = {
+                "X-Plex-Client-Identifier":localStorage.clientID,
+                "X-Plex-Token":tokenToTry
+
             },
             url: url,
-            onload: resolve,
+            onload: function(state){
+                if (state.status === 200) {
+                    resolve(state);
+                }
+            },
             onreadystatechange: function(state) {
                 if (state.readyState === 4) {
                     if(state.status === 401)
                     {
-                     onError();
+                        onError();
                     } else if (state.status !== 200) {
                         showToast('Error calling: ' + url + '. Response: ' + state.responseText + ' Code:' + state.status + ' Message: ' + state.statusText, 1);
                     }
@@ -160,7 +166,7 @@ var clickListener = function(e) {
     e.stopPropagation();
     var a = jQuery(e.target).closest('a');
     var link = a.attr('href');
-    var openFolder = a.attr('data-type') === 'folder';
+    var openFolder = jQuery(e.target).attr('data-type') === 'folder';
     var url = link;
     if (link === '#' || link === undefined || link === 'javascript:void(0)') {
         url = window.location.hash;
@@ -228,25 +234,23 @@ var clickListener = function(e) {
 };
 
 var bindClicks = function() {
-    jQuery(".glyphicon.play").each(function(i, e) {
-        e = jQuery(e);
-        if (!e.hasClass('plexextplayer')) {
-            if (!e.parent().hasClass('hidden')) {
-                e.addClass('plexextplayer');
-                var parent = e.parent().parent();
-                if (parent.is('li')) {
-                    var template = jQuery('<li><a class="btn-gray" href="javascript:void(0)" title="Play Externally" data-toggle="Play Externally" data-original-title="Play Externally"><i class="glyphicon play plexextplayer plexextplayerico"></i></a></li><li><a class="btn-gray" href="#" title="Open containing folder" data-type="folder" data-toggle="Play Externally" data-original-title="Open containing folder"><i class="glyphicon play plexextplayer plexfolderextplayerico"></i></a></li>');
-                    parent.after(template);
-                    template.click(clickListener);
-                } else if (parent.is('div') && parent.hasClass('media-poster-actions')) {
-                    var template = jQuery('<button class="play-btn media-poster-btn btn-link" tabindex="-1"><i class="glyphicon play plexextplayer plexextplayerico"></i></button>');
-                    parent.prepend(template);
-                    template.click(clickListener);
-                }
-            }
-        }
+    var hasBtn = false;
+    var toolBar= jQuery(".plex-icon-toolbar-play-560").parent().parent();
+    toolBar.children('button').each(function(i, e) {
+        if(jQuery(e).hasClass('plexextplayer'))
+            hasBtn = true;
     });
-    // React cover page
+
+
+    if(!hasBtn)
+    {
+        var template = jQuery('<button class="play-btn media-poster-btn btn-link plexextplayer" tabindex="-1" title="Play Externally"><i class="glyphicon play plexextplayer plexextplayerico"></i></button><button class="play-btn media-poster-btn btn-link plexextplayer" title="Open folder" tabindex="-1"><i  data-type="folder" class="glyphicon play plexextplayer plexfolderextplayerico"></i></button>');
+        toolBar.prepend(template);
+        template.click(clickListener);
+
+    }
+
+    // Cover page
     jQuery(".plex-icon-more-560").each(function(i, e) {
         e = jQuery(e);
         var poster = e.parent().parent();
@@ -271,7 +275,7 @@ var bindClicks = function() {
 };
 
 // Make buttons smaller
-jQuery('body').append('<style>.plexextplayericocover {right: 10px; top: 10px; position:absolute; display:none;font-size:15px;} .glyphicon.plexfolderextplayerico:before {  content: "\\e343";   } .glyphicon.plexextplayerico:before {  content: "\\e161";   }</style>');
+jQuery('body').append('<style>.plexextplayericocover {right: 10px; top: 10px; position:absolute; display:none;font-size:15px;} .glyphicon.plexfolderextplayerico:before {  content: "\\e145";   } .glyphicon.plexextplayerico:before {  content: "\\e161";   }</style>');
 
 // Bind buttons and check for new ones every 100ms
 setInterval(bindClicks, 100);
