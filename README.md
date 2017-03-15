@@ -12,7 +12,7 @@ The script add a button to next to play in the plex web interface (Not via plex.
 4. Install the script from github or [GreasyFork](https://greasyfork.org/en/scripts/13437-plex-external-player)
 5. Refresh any existing plex pages you have open.
 
-![screenshot](http://i.imgur.com/YZr2pbk.png "screenshot")
+![screenshot](i.imgur.com/sm49By9.png "screenshot")
 
 ### Tweaking
 * Custom domain
