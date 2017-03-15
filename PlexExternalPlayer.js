@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Plex External Player
 // @namespace    https://github.com/Kayomani/PlexExternalPlayer
-// @version      1.9
+// @version      1.11
 // @description  Play plex videos in an external player
 // @author       Kayomani
 // @include     /^https?://.*:32400/web.*
@@ -48,7 +48,7 @@ var showToast = function(msg, error){
 };
 
 var logMessage = function(msg){
-    console.log('Plex External: ' + msg);
+    console.log('[Plex External] ' + msg);
 };
 
 var makeRequest = function(url, user, server){
@@ -102,7 +102,8 @@ var makeRequest = function(url, user, server){
             }
             makeRequest(url,user,server).then(resolve, reject);
         };
-
+        
+        logMessage('Calling ' + url +' clientId ' + localStorage.clientID + 'Token ' + tokenToTry);
         GM_xmlhttpRequest({
             method: "GET",
             headers: headers = {
@@ -113,17 +114,21 @@ var makeRequest = function(url, user, server){
             url: url,
             onload: function(state){
                 if (state.status === 200) {
+                      logMessage('Called sucessfully to ' + url);
                     resolve(state);
                 }
             },
             onreadystatechange: function(state) {
                 if (state.readyState === 4) {
+                    
                     if(state.status === 401)
                     {
+                        logMessage('Not Authorised ' + url);
                         onError();
                     } else if (state.status !== 200) {
+                     logMessage('Request returned ' + state.status);
                         showToast('Error calling: ' + url + '. Response: ' + state.responseText + ' Code:' + state.status + ' Message: ' + state.statusText, 1);
-                    }
+                    } 
                 }
             },
             onerror: onError
@@ -228,7 +233,8 @@ var clickListener = function(e) {
                 }
             }
         }, function(error){
-            showToast('Error getting metadata from' + metaDataPath, 1);
+            showToast('Error getting metadata from ' + metaDataPath + "Error: " + error, 1);
+            logMessage('Error ' + JSON.stringify(error));
         });
     }
 };
