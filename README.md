@@ -14,6 +14,9 @@ The script add a button to next to play in the plex web interface (Not via plex.
 
 ![screenshot](http://i.imgur.com/sm49By9.png "screenshot")
 
+### Donation
+Like it? Any bitcoin donations to 1HNxsJk3DEja6qe45KwJQvCQu6USQ1s72o would be epic :)
+
 ### Tweaking
 * Custom domain
 

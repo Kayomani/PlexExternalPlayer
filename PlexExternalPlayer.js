@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Plex External Player
 // @namespace    https://github.com/Kayomani/PlexExternalPlayer
-// @version      1.11
+// @version      1.12
 // @description  Play plex videos in an external player
 // @author       Kayomani
 // @include     /^https?://.*:32400/web.*
@@ -54,7 +54,12 @@ var logMessage = function(msg){
 var makeRequest = function(url, user, server){
     return new Promise( function (resolve, reject) {
         var origAccessToken = localStorage.myPlexAccessToken;
-        var serverNode = JSON.parse(localStorage.users);
+        var serverNode = {};
+        if(localStorage.users) { 
+           serverNode = JSON.parse(localStorage.users);
+        } else {
+           logMessage('User details not found');   
+        }
         var tokenToTry = origAccessToken;
         if(serverNode===undefined)
         {

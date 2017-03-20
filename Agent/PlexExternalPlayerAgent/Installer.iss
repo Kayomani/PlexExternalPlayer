@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Plex External Player Agent"
-#define MyAppVersion "1.8.0"
+#define MyAppVersion "1.12.0"
 #define MyAppPublisher "Kayomani"
 #define MyAppURL "https://github.com/Kayomani/PlexExternalPlayer"
 #define MyAppExeName "PlexExternalPlayerAgent.exe"

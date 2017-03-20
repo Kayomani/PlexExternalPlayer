@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -22,6 +23,33 @@ namespace PlexExternalPlayerAgent
         [STAThread]
         static void Main()
         {
+            var allowedExtensions = new List<string>()
+            {
+               ".avi",
+               ".mkv",
+               ".mp4",
+               ".mpg",
+               ".ts",
+               ".wmv",
+               ".m4v",
+               ".flv",
+               ".mpeg"
+            };
+
+            var configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PlexAgent\\allowed.json");
+
+            try
+            {
+                if (File.Exists(configPath))
+                {
+                    allowedExtensions = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText(configPath));
+                }
+
+            }
+            catch
+            {
+                MessageBox.Show($"Failed to load extension preferences, switching back to defaults.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
 
             using (var httpServer = new HttpServer(new HttpRequestProvider()))
             {
@@ -51,38 +79,51 @@ namespace PlexExternalPlayerAgent
                     context.Response = HttpResponse.CreateWithMessage(HttpResponseCode.Ok, "Received", false);
 
                     var info = new ProcessStartInfo();
-                    info.FileName = WebUtility.UrlDecode(context.Request.QueryString.GetByName("item")).Replace("[PLEXEXTPLUS]","+");
+                    info.FileName = WebUtility.UrlDecode(context.Request.QueryString.GetByName("item")).Replace("[PLEXEXTPLUS]", "+");
 
                     info.UseShellExecute = true;
 
                     if (File.Exists(info.FileName))
                     {
+
                         var fn = info.FileName.ToLower();
-                        if (fn.EndsWith(".avi") ||
-                            fn.EndsWith(".mkv") ||
-                            fn.EndsWith(".mp4") ||
-                            fn.EndsWith(".mpg") ||
-                            fn.EndsWith(".ts") ||
-                            fn.EndsWith(".wmv") ||
-                            fn.EndsWith(".flv") ||
-                            fn.EndsWith(".mpeg"))
+                        var ext = Path.GetExtension(fn);
+
+                        if (allowedExtensions.Contains(ext))
                         {
-                            try {
+                            try
+                            {
                                 Process.Start(info);
                             }
-                            catch(Exception e)
+                            catch (Exception e)
                             {
-                                MessageBox.Show($"Error running {info.FileName}  due to : {e.Message}","Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                MessageBox.Show($"Error running {info.FileName}  due to : {e.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             }
                         }
                         else
                         {
-                            MessageBox.Show($"Tried to run {info.FileName} but it wasn't allowed.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                            if (MessageBox.Show($"Tried to run {info.FileName} but {ext} files are not allowed. Do you want to open it anyway?", "Error", MessageBoxButtons.YesNo, MessageBoxIcon.Error) == DialogResult.Yes)
+                            {
+
+                                if (MessageBox.Show($"Do you want to whitelist {ext} files so you are not prompted in future?", "Error", MessageBoxButtons.YesNo, MessageBoxIcon.Error) == DialogResult.Yes)
+                                {
+                                    allowedExtensions.Add(ext);
+
+                                    if (!Directory.Exists(Path.GetDirectoryName(configPath)))
+                                        Directory.CreateDirectory(Path.GetDirectoryName(configPath));
+                                    File.WriteAllText(configPath, JsonConvert.SerializeObject(allowedExtensions));
+                                }
+
+                                Process.Start(info);
+                            }
                         }
 
-                    } else if (Directory.Exists(info.FileName))
+                    }
+                    else if (Directory.Exists(info.FileName))
                     {
-                        try {
+                        try
+                        {
                             Process.Start(info);
                         }
                         catch (Exception e)
