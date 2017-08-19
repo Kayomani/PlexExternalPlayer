@@ -265,7 +265,7 @@ var bindClicks = function() {
     jQuery(".plex-icon-more-560").each(function(i, e) {
         e = jQuery(e);
         var poster = e.parent().parent();
-        if(poster.length === 1 && poster[0].className.startsWith('MetadataPosterCardOverlay'))
+        if(poster.length === 1 && poster[0].className.trim().startsWith('MetadataPosterCardOverlay'))
         {
             var existingButton = poster.find('.plexextplayerico');
             if(existingButton.length === 0)
