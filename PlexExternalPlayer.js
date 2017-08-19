@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Plex External Player
 // @namespace    https://github.com/Kayomani/PlexExternalPlayer
-// @version      1.12
+// @version      1.13
 // @description  Play plex videos in an external player
 // @author       Kayomani
 // @include     /^https?://.*:32400/web.*
 // @include     http://*:32400/web/index.html*
-// @require     http://code.jquery.com/jquery-1.11.3.min.js
+// @require     http://code.jquery.com/jquery-3.2.1.min.js
 // @connect     *
 // @require     https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js
 // @grant       GM_xmlhttpRequest
