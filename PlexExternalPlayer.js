@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Plex External Player
 // @namespace    https://github.com/Kayomani/PlexExternalPlayer
-// @version      1.13
+// @version      1.14
 // @description  Play plex videos in an external player
 // @author       Kayomani
 // @include     /^https?://.*:32400/web.*
@@ -176,7 +176,7 @@ var clickListener = function(e) {
     e.stopPropagation();
     var a = jQuery(e.target).closest('a');
     var link = a.attr('href');
-    var openFolder = jQuery(e.target).attr('data-type') === 'folder';
+    var openFolder = jQuery(e.target).attr('title') === 'Open folder';
     var url = link;
     if (link === '#' || link === undefined || link === 'javascript:void(0)') {
         url = window.location.hash;
@@ -255,7 +255,7 @@ var bindClicks = function() {
 
     if(!hasBtn)
     {
-        var template = jQuery('<button class="play-btn media-poster-btn btn-link plexextplayer" tabindex="-1" title="Play Externally"><i class="glyphicon play plexextplayer plexextplayerico"></i></button><button class="play-btn media-poster-btn btn-link plexextplayer" title="Open folder" tabindex="-1"><i  data-type="folder" class="glyphicon play plexextplayer plexfolderextplayerico"></i></button>');
+        var template = jQuery('<button class="play-btn media-poster-btn btn-link plexextplayer" tabindex="-1" title="Play Externally"><i class="glyphicon play plexextplayer plexextplayerico"></i></button><button class="play-btn media-poster-btn btn-link plexextplayer" title="Open folder" tabindex="-1"><i  data-type="folder"  title="Open folder" class="glyphicon play plexextplayer plexfolderextplayerico"></i></button>');
         toolBar.prepend(template);
         template.click(clickListener);
 
