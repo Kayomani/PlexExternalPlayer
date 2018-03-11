@@ -1,12 +1,11 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using uhttpsharp;
@@ -35,16 +34,19 @@ namespace PlexExternalPlayerAgent
                ".flv",
                ".mpeg"
             };
+            var playerPath = "";
 
             var configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PlexAgent\\allowed.json");
-
+            JObject json = new JObject();
             try
             {
                 if (File.Exists(configPath))
                 {
-                    allowedExtensions = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText(configPath));
+                    json = JObject.Parse(File.ReadAllText(configPath));
+                    JToken path = new JObject();
+                    if (json.TryGetValue("player_path", out path)) playerPath = path.Value<string>();
+                    allowedExtensions = JsonConvert.DeserializeObject<List<string>>(json.GetValue("allowed_extensions").ToString());
                 }
-
             }
             catch
             {
@@ -83,7 +85,7 @@ namespace PlexExternalPlayerAgent
 
                     info.UseShellExecute = true;
 
-                    if (File.Exists(info.FileName))
+                    if (File.Exists(info.FileName) || info.FileName.StartsWith("http"))
                     {
 
                         var fn = info.FileName.ToLower();
@@ -93,7 +95,16 @@ namespace PlexExternalPlayerAgent
                         {
                             try
                             {
-                                Process.Start(info);
+                                if (playerPath.Length != 0)
+                                {
+                                    info.Arguments = info.FileName;
+                                    info.FileName = playerPath;
+                                    Process.Start(info);
+                                }
+                                else
+                                {
+                                    Process.Start(info.FileName);
+                                }
                             }
                             catch (Exception e)
                             {
@@ -109,10 +120,10 @@ namespace PlexExternalPlayerAgent
                                 if (MessageBox.Show($"Do you want to whitelist {ext} files so you are not prompted in future?", "Error", MessageBoxButtons.YesNo, MessageBoxIcon.Error) == DialogResult.Yes)
                                 {
                                     allowedExtensions.Add(ext);
-
+                                    json["allowed_extensions"] = new JArray(allowedExtensions);
                                     if (!Directory.Exists(Path.GetDirectoryName(configPath)))
                                         Directory.CreateDirectory(Path.GetDirectoryName(configPath));
-                                    File.WriteAllText(configPath, JsonConvert.SerializeObject(allowedExtensions));
+                                    File.WriteAllText(configPath, JsonConvert.SerializeObject(json, Formatting.Indented));
                                 }
 
                                 Process.Start(info);
