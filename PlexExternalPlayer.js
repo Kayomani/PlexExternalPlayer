@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Plex External Player
 // @namespace    https://github.com/Kayomani/PlexExternalPlayer
-// @version      1.15
+// @version      1.16
 // @description  Play plex videos in an external player
 // @author       Kayomani
 // @include     /^https?://.*:32400/web.*
 // @include     http://*:32400/web/index.html*
+// @include     https://*:32400/web/index.html*
 // @require     http://code.jquery.com/jquery-3.2.1.min.js
 // @connect     *
 // @require     https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js
@@ -107,16 +108,13 @@ var makeRequest = function(url, user, server){
             }
             makeRequest(url,user,server).then(resolve, reject);
         };
-        
-        logMessage('Calling ' + url +' clientId ' + localStorage.clientID + 'Token ' + tokenToTry);
+
+        var authedUrl =  url + '&X-Plex-Token=' +tokenToTry; 
+        logMessage('Calling ' + authedUrl);
         GM_xmlhttpRequest({
             method: "GET",
-            headers: headers = {
-                "X-Plex-Client-Identifier":localStorage.clientID,
-                "X-Plex-Token":tokenToTry
-
-            },
-            url: url,
+           
+            url: authedUrl,
             onload: function(state){
                 if (state.status === 200) {
                       logMessage('Called sucessfully to ' + url);
@@ -185,9 +183,13 @@ var clickListener = function(e) {
     if (url.indexOf('%2Fmetadata%2F') > -1) {
         var idx = url.indexOf('%2Fmetadata%2F');
         var id = url.substr(idx + 14);
+        var idToken = id.indexOf('&');
+        if(idToken>-1){
+           id= id.substr(0, idToken);
+        }
 
         // Get metadata
-        var metaDataPath = window.location.origin + '/library/metadata/' + id + '?checkFiles=1&includeExtras=1';
+        var metaDataPath = window.location.origin + '/library/metadata/' + id + '?includeConcerts=1&includeExtras=1&includeOnDeck=1&includePopularLeaves=1&includePreferences=1&includeChapters=1&asyncCheckFiles=0&asyncRefreshAnalysis=0&asyncRefreshLocalMediaAgent=0';
         makeRequest(metaDataPath)
             .then(function(response){
             // Play the first availible part
