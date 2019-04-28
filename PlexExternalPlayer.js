@@ -56,10 +56,10 @@ var makeRequest = function(url, user, server){
     return new Promise( function (resolve, reject) {
         var origAccessToken = localStorage.myPlexAccessToken;
         var serverNode = {};
-        if(localStorage.users) { 
+        if(localStorage.users) {
            serverNode = JSON.parse(localStorage.users);
         } else {
-           logMessage('User details not found');   
+           logMessage('User details not found');
         }
         var tokenToTry = origAccessToken;
         if(serverNode===undefined)
@@ -109,11 +109,11 @@ var makeRequest = function(url, user, server){
             makeRequest(url,user,server).then(resolve, reject);
         };
 
-        var authedUrl =  url + '&X-Plex-Token=' +tokenToTry; 
+        var authedUrl =  url + '&X-Plex-Token=' +tokenToTry;
         logMessage('Calling ' + authedUrl);
         GM_xmlhttpRequest({
             method: "GET",
-           
+
             url: authedUrl,
             onload: function(state){
                 if (state.status === 200) {
@@ -123,7 +123,7 @@ var makeRequest = function(url, user, server){
             },
             onreadystatechange: function(state) {
                 if (state.readyState === 4) {
-                    
+
                     if(state.status === 401)
                     {
                         logMessage('Not Authorised ' + url);
@@ -131,7 +131,7 @@ var makeRequest = function(url, user, server){
                     } else if (state.status !== 200) {
                      logMessage('Request returned ' + state.status);
                         showToast('Error calling: ' + url + '. Response: ' + state.responseText + ' Code:' + state.status + ' Message: ' + state.statusText, 1);
-                    } 
+                    }
                 }
             },
             onerror: onError
@@ -248,7 +248,7 @@ var clickListener = function(e) {
 
 var bindClicks = function() {
     var hasBtn = false;
-    var toolBar= jQuery(".plex-icon-toolbar-play-560").parent().parent();
+    var toolBar= jQuery("#plex-icon-toolbar-play-560").parent().parent();
     toolBar.children('button').each(function(i, e) {
         if(jQuery(e).hasClass('plexextplayer'))
             hasBtn = true;
@@ -264,7 +264,7 @@ var bindClicks = function() {
     }
 
     // Cover page
-    jQuery(".plex-icon-more-560").each(function(i, e) {
+    jQuery('[id=plex-icon-more-560]').each(function(i, e) {
         e = jQuery(e);
         var poster = e.parent().parent();
         if(poster.length === 1 && poster[0].className.trim().startsWith('MetadataPosterCardOverlay'))
@@ -273,7 +273,7 @@ var bindClicks = function() {
             if(existingButton.length === 0)
             {
                 var url = poster.find('a').attr('href');
-                var template = jQuery('<a href="'+ url +'" aria-haspopup="false"  aria-role="button" class="" type="button"><i class="glyphicon play plexextplayer plexextplayerico plexextplayericocover"></i></button>'); 
+                var template = jQuery('<a href="'+ url +'" aria-haspopup="false"  aria-role="button" class="" type="button"><i class="glyphicon play plexextplayer plexextplayerico plexextplayericocover"></i></button>');
                 var newButton = template.appendTo(poster);
                 newButton.click(clickListener);
                 poster.mouseenter(function(){
