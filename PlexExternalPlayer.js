@@ -264,7 +264,7 @@ var bindClicks = function() {
     }
 
     // Cover page
-    jQuery('[id=plex-icon-more-560]').each(function(i, e) {
+    jQuery('[id=plex-icon-more-vertical-560]').each(function(i, e) {
         e = jQuery(e);
         var poster = e.parent().parent();
         if(poster.length === 1 && poster[0].className.trim().startsWith('MetadataPosterCardOverlay'))
