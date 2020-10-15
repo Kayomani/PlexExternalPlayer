@@ -138,8 +138,6 @@ var markAsPlayedInPlex = function (id, serverId) {
 };
 
 var openItemOnAgent = function (path, id, openFolder, serverId) {
-    path = path.replace('\/mnt\/storage\/', 'W:\\'); //Holodeck
-    path = path.replace('\/volume1\/NetStorage\/', 'Z:\\'); //DS1
     if (openFolder) {
         var fwd = path.lastIndexOf('/');
         var bck = path.lastIndexOf('\\');
