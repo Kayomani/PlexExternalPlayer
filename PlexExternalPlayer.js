@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Plex External Player
 // @namespace    https://github.com/Kayomani/PlexExternalPlayer
-// @version      1.19
+// @version      1.20
 // @description  Play plex videos in an external player
 // @author       Kayomani, 1LucKyLuke
 // @include     /^https?://.*:32400/web.*
@@ -332,7 +332,7 @@ var getHosts = function () {
                     let connections = parts[i].getElementsByTagName('Connection');
                     for (let j = 0; j < connections.length; j++) {
                         if (connections[j].getAttribute('local') == '1') {
-                            pmsUrls.set(parts[i].getAttribute('clientIdentifier'), 'https://' + connections[j].getAttribute('address') + ':' + connections[j].getAttribute('port'));
+                            pmsUrls.set(parts[i].getAttribute('clientIdentifier'), 'http://' + connections[j].getAttribute('address') + ':' + connections[j].getAttribute('port'));
                             break;
                         }
                     }
@@ -348,7 +348,9 @@ jQuery('body').append('<style>.plexextplayericocover {right: 10px; top: 10px; po
 
 //Get known Plex Servers
 var pmsUrls = new Map();
-getHosts();
+setTimeout(function(){
+    getHosts();
+},1000);
 
 // Bind buttons and check for new ones every 100ms
 setInterval(bindClicks, 100);
