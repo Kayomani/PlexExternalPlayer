@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Plex External Player
 // @namespace    https://github.com/Kayomani/PlexExternalPlayer
-// @version      1.20
+// @version      1.21
 // @description  Play plex videos in an external player
 // @author       Kayomani, 1LucKyLuke
 // @include     /^https?://.*:32400/web.*
@@ -52,7 +52,7 @@ var logMessage = function (msg) {
     console.log('[Plex External] ' + msg);
 };
 
-var makeRequest = function (url, user, server) {
+var makeRequest = function (url, serverId) {
     return new Promise(function (resolve, reject) {
         var origAccessToken = localStorage.myPlexAccessToken;
         var serverNode = {};
@@ -67,37 +67,22 @@ var makeRequest = function (url, user, server) {
                 users: []
             };
         }
-
-        if (user !== undefined && server !== undefined) {
-            if (user < serverNode.users.length) {
-                if (server < serverNode.users[user].servers.length) {
-                    tokenToTry = serverNode.users[user].servers[server].accessToken;
+        if (serverId !== undefined) {
+            serverLoop:
+            for (var i = 0; i < serverNode.users.length; i++) {
+                for (var j = 0; j < serverNode.users[i].servers.length; j++) {
+                    if (serverNode.users[i].servers[j].machineIdentifier == serverId) {
+                        tokenToTry = serverNode.users[i].servers[j].accessToken;
+                        logMessage('Token found:' + tokenToTry);
+                        break serverLoop;
+                    } else {
+                        showToast('Could not find authentication info', 1);
+                        reject();
+                        return;
+                    }
                 }
-                else {
-                    showToast('Could not find authentication info', 1);
-                    reject();
-                    return;
-                }
-            }
-            else {
-                showToast('Could not find authentication info', 1);
-                reject();
-                return;
             }
         }
-        var onError = function () {
-            if (user === undefined) {
-                user = 0;
-                server = 0;
-            } else {
-                server++;
-                if (serverNode.users[user].servers.length === server) {
-                    user++;
-                    server = 0;
-                }
-            }
-            makeRequest(url, user, server).then(resolve, reject);
-        };
 
         var authedUrl = url + '&X-Plex-Token=' + tokenToTry;
         logMessage('Calling ' + authedUrl);
@@ -116,14 +101,12 @@ var makeRequest = function (url, user, server) {
 
                     if (state.status === 401) {
                         logMessage('Not Authorised ' + url);
-                        onError();
                     } else if (state.status !== 200) {
                         logMessage('Request returned ' + state.status);
                         showToast('Error calling: ' + url + '. Response: ' + state.responseText + ' Code:' + state.status + ' Message: ' + state.statusText, 1);
                     }
                 }
             },
-            onerror: onError
         });
     });
 };
@@ -132,7 +115,7 @@ var makeRequest = function (url, user, server) {
 
 var markAsPlayedInPlex = function (id, serverId) {
     logMessage('Marking ' + id + ' as played');
-    return makeRequest(pmsUrls.get(serverId) + '/:/scrobble?key=' + id + '&identifier=com.plexapp.plugins.library').catch(function () {
+    return makeRequest(pmsUrls.get(serverId) + '/:/scrobble?key=' + id + '&identifier=com.plexapp.plugins.library', serverId).catch(function () {
         showToast('Failed to mark item ' + id + ' as played');
     });
 };
@@ -185,7 +168,7 @@ var clickListener = function (e) {
 
         // Get metadata
         let metaDataPath = pmsUrls.get(serverId) + '/library/metadata/' + id + '?includeConcerts=1&includeExtras=1&includeOnDeck=1&includePopularLeaves=1&includePreferences=1&includeChapters=1&asyncCheckFiles=0&asyncRefreshAnalysis=0&asyncRefreshLocalMediaAgent=0';
-        makeRequest(metaDataPath)
+        makeRequest(metaDataPath, serverId)
             .then(function (response) {
                 // Play the first availible part
                 let parts = response.responseXML.getElementsByTagName('Part');
@@ -206,7 +189,7 @@ var clickListener = function (e) {
                     // If we got a directory/Season back then get the files in it
                     var dirs = response.responseXML.getElementsByTagName('Directory');
                     if (dirs.length > 0) {
-                        makeRequest(pmsUrls.get(serverId) + dirs[0].attributes['key'].value + '?includeConcerts=1&includeExtras=1&includeOnDeck=1&includePopularLeaves=1&includePreferences=1&includeChapters=1&asyncCheckFiles=0&asyncRefreshAnalysis=0&asyncRefreshLocalMediaAgent=0')
+                        makeRequest(pmsUrls.get(serverId) + dirs[0].attributes['key'].value + '?includeConcerts=1&includeExtras=1&includeOnDeck=1&includePopularLeaves=1&includePreferences=1&includeChapters=1&asyncCheckFiles=0&asyncRefreshAnalysis=0&asyncRefreshLocalMediaAgent=0',serverId)
                             .then(function (response) {
                                 var videos = response.responseXML.getElementsByTagName('Video');
                                 var file = null;
@@ -331,7 +314,7 @@ var getHosts = function () {
                 if (parts[i].getAttribute('product') == 'Plex Media Server') {
                     let connections = parts[i].getElementsByTagName('Connection');
                     for (let j = 0; j < connections.length; j++) {
-                        if (connections[j].getAttribute('local') == '1') {
+                        if (connections[j].getAttribute('local') == parts[i].getAttribute('publicAddressMatches')) {
                             pmsUrls.set(parts[i].getAttribute('clientIdentifier'), 'http://' + connections[j].getAttribute('address') + ':' + connections[j].getAttribute('port'));
                             break;
                         }
@@ -348,9 +331,10 @@ jQuery('body').append('<style>.plexextplayericocover {right: 10px; top: 10px; po
 
 //Get known Plex Servers
 var pmsUrls = new Map();
-setTimeout(function(){
+setTimeout(function () {
     getHosts();
-},1000);
+    console.log(pmsUrls);
+}, 1000);
 
 // Bind buttons and check for new ones every 100ms
 setInterval(bindClicks, 100);
