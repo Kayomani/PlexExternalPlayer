@@ -83,7 +83,7 @@ var makeRequest = function (url, serverId) {
                   }
               }
           }
-          if (tokenFound !== false){
+          if (!tokenFound){
               showToast('Could not find authentication info', 1);
               reject();
               return;
