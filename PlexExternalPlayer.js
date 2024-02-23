@@ -234,7 +234,7 @@ var clickListener = function (e) {
 
 var bindClicks = function () {
   var hasBtn = false;
-  var toolBar = jQuery("#plex-icon-toolbar-play-560").parent().parent();
+  var toolBar = jQuery('button[data-testid="preplay-play"]').parent();
   toolBar.children('button').each(function (i, e) {
       if (jQuery(e).hasClass('plexextplayer'))
           hasBtn = true;
