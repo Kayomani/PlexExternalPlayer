@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Plex External Player
 // @namespace    https://github.com/Kayomani/PlexExternalPlayer
-// @version      1.22
+// @version      1.23
 // @description  Play plex videos in an external player
 // @author       Kayomani, 1LucKyLuke
 // @include     /^https?://.*:32400/web.*
